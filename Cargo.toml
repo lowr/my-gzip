@@ -1,0 +1,9 @@
+[package]
+name = "my-gzip"
+version = "0.0.1"
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0"
+clap = "3.0.0-beta.2"
