@@ -66,7 +66,7 @@ where
         .context("failed to read magic numbers")?;
     if ids[0] != 0x1f || ids[1] != 0x8b {
         bail!(
-            "wrong magic number; ID1 = {:#x} (expected 0x1f), ID2 = {:#x} (expected 0x8b",
+            "wrong magic number; ID1 = {:#x} (expected 0x1f), ID2 = {:#x} (expected 0x8b)",
             ids[0],
             ids[1],
         );
