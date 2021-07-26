@@ -24,17 +24,14 @@ where
 
 // TODO: using const generics here doesn't seem right.
 fn build_tree<const MAX_BITS: usize>(lengths: &[u8]) -> Result<BinaryTrie> {
-    // dbg!(lengths);
     let mut counts = [0usize; MAX_BITS];
     for &l in lengths {
         let index: usize = l.into();
-        if index > 0 {
-            counts[index] += 1;
-        }
+        counts[index] += 1;
     }
 
     let mut next_code = [0usize; MAX_BITS];
-    for bits in 1..MAX_BITS {
+    for bits in 2..MAX_BITS {
         next_code[bits] = (next_code[bits - 1] + counts[bits - 1]) << 1;
     }
 
