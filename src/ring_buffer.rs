@@ -264,7 +264,7 @@ mod tests {
         // [0, 1, 2, 3, 4, u, u, u, u, u]
         //        ~~~~~~~~~~
         //                 ^^^^^^^^^^
-        //      copy from here
+        //        copy from here
         //                 to here
         assert_eq!(copied, (&[2, 3, 4, 2][..], &[][..]));
 
@@ -280,7 +280,7 @@ mod tests {
         // [0, 1, 2, 3, 4, u, u, u, u, u]
         //        ~~~~~~~~~~~~~~~~~~~
         //  ^^^^           ^^^^^^^^^^^^^
-        //      copy from here
+        //        copy from here
         //                 to here (wraps)
         assert_eq!(copied, (&[2, 3, 4, 2, 3][..], &[4, 2][..]));
 
@@ -296,7 +296,7 @@ mod tests {
         // [0, 1, 2, 3, 4, u, u, u, u, u]
         //  ~        ~~~~~~~~~~~~~~~~~~~
         //  ^^^^^^^        ^^^^^^^^^^^^^
-        //      copy from here (wraps)
+        //           copy from here (wraps)
         //                 to here (wraps)
         assert_eq!(copied, (&[3, 4, 3, 4, 3][..], &[4, 3, 4][..]));
 
@@ -495,7 +495,7 @@ mod tests {
         // [10, 11, 12, 13, 14, 5, 6, 7, 8, 9]
         //                         ~~~~~~~~~~
         //  ^^^^^^                       ^^^^
-        //      copy from here
+        //                         copy from here
         //                               to here (wraps)
         assert_eq!(copied, (&[6, 7][..], &[6, 7][..]));
 
