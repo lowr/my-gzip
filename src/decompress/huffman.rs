@@ -22,16 +22,24 @@ where
     Ok(ret)
 }
 
-// TODO: using const generics here doesn't seem right.
-fn build_tree<const MAX_BITS: usize>(lengths: &[u8]) -> Result<BinaryTrie> {
-    let mut counts = [0usize; MAX_BITS];
+fn build_tree(lengths: &[u8]) -> Result<BinaryTrie> {
+    // as per spec, maximum number of bits should be less than 16.
+    const BITS_UPPER_BOUND: usize = 16;
+    let max_bits = *lengths
+        .iter()
+        .max()
+        .context("cannot build tree from empty slice")?;
+    let max_bits = max_bits.into();
+    debug_assert!(max_bits < BITS_UPPER_BOUND);
+
+    let mut counts = [0usize; BITS_UPPER_BOUND];
     for &l in lengths {
         let index: usize = l.into();
         counts[index] += 1;
     }
 
-    let mut next_code = [0usize; MAX_BITS];
-    for bits in 2..MAX_BITS {
+    let mut next_code = [0usize; BITS_UPPER_BOUND];
+    for bits in 2..=max_bits {
         next_code[bits] = (next_code[bits - 1] + counts[bits - 1]) << 1;
     }
 
@@ -238,14 +246,14 @@ where
         lengths[i] = read_number_le(reader, 3)?.try_into().unwrap();
     }
 
-    let code_tree = build_tree::<8>(&lengths)?;
+    let code_tree = build_tree(&lengths)?;
 
     let mut code_lengths = Vec::with_capacity(hlit + hdist);
     read_code_lengths(reader, &mut code_lengths, &code_tree, hlit + hdist)?;
     let (lit, dist) = code_lengths.split_at(hlit);
 
-    let lit_tree = build_tree::<16>(lit)?;
-    let dist_tree = build_tree::<16>(dist)?;
+    let lit_tree = build_tree(lit)?;
+    let dist_tree = build_tree(dist)?;
 
     let bytes = read_compressed_data(reader, writer, &lit_tree, &dist_tree)?;
 
@@ -278,8 +286,8 @@ where
 {
     // TODO: we don't want to build trees for every block
     let (lit, dist) = LENGTH_ARRAYS;
-    let lit_tree = build_tree::<10>(&lit)?;
-    let dist_tree = build_tree::<6>(&dist)?;
+    let lit_tree = build_tree(&lit)?;
+    let dist_tree = build_tree(&dist)?;
 
     let bytes = read_compressed_data(reader, writer, &lit_tree, &dist_tree)?;
 
