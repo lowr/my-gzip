@@ -1,6 +1,7 @@
 use crate::reader::Reader;
 use crate::writer::Writer;
 use anyhow::{bail, Context, Result};
+use encoding_rs::mem::decode_latin1;
 use std::convert::TryInto;
 use std::io::{Read, Write};
 
@@ -109,23 +110,35 @@ where
     }
 
     if flags.name {
-        // TODO: handle file name properly
+        let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
             if byte == 0 {
                 break;
+            } else {
+                buf.push(byte);
             }
         }
+
+        // TODO: handle file name properly
+        let _name = decode_latin1(&buf[..]);
+        // eprintln!("original file name = {}", _name);
     }
 
     if flags.comment {
-        // TODO: handle and output comment
+        let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
             if byte == 0 {
                 break;
+            } else {
+                buf.push(byte);
             }
         }
+
+        // TODO: handle and output comment
+        let _comment = decode_latin1(&buf[..]);
+        // eprintln!("comment = {}", _comment);
     }
 
     // TODO: check crc16
