@@ -260,9 +260,8 @@ where
     Ok(bytes)
 }
 
-const fn build_length_arrays() -> ([u8; 288], [u8; 32]) {
+const fn build_lit_lengths() -> [u8; 288] {
     let mut lit = [8; 288];
-    let dist = [5; 32];
 
     let mut i = 144;
     while i < 256 {
@@ -274,22 +273,26 @@ const fn build_length_arrays() -> ([u8; 288], [u8; 32]) {
         i += 1;
     }
 
-    (lit, dist)
+    lit
 }
 
-const LENGTH_ARRAYS: ([u8; 288], [u8; 32]) = build_length_arrays();
+const LIT_LENGTHS: [u8; 288] = build_lit_lengths();
+const DIST_LENGTHS: [u8; 32] = [5; 32];
+
+thread_local!(
+    // guaranteed to be infallible
+    static LIT_TREE: BinaryTrie = build_tree(&LIT_LENGTHS).unwrap();
+    static DIST_TREE: BinaryTrie = build_tree(&DIST_LENGTHS).unwrap();
+);
 
 pub fn decompress_fixed<R, W>(reader: &mut Reader<R>, writer: &mut Writer<W>) -> Result<usize>
 where
     R: Read,
     W: Write,
 {
-    // TODO: we don't want to build trees for every block
-    let (lit, dist) = LENGTH_ARRAYS;
-    let lit_tree = build_tree(&lit)?;
-    let dist_tree = build_tree(&dist)?;
-
-    let bytes = read_compressed_data(reader, writer, &lit_tree, &dist_tree)?;
+    let bytes = LIT_TREE.with(|lit_tree| {
+        DIST_TREE.with(|dist_tree| read_compressed_data(reader, writer, lit_tree, dist_tree))
+    })?;
 
     Ok(bytes)
 }
