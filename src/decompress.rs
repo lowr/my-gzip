@@ -28,24 +28,28 @@ where
     Ok((bytes, final_block))
 }
 
-#[derive(Debug)]
-struct GzipFlags {
-    text: bool,
-    crc: bool,
-    extra: bool,
-    name: bool,
-    comment: bool,
-}
+struct GzipFlags(u8);
 
 impl GzipFlags {
-    fn new(byte: u8) -> Self {
-        Self {
-            text: (byte & 0x01) > 0,
-            crc: (byte & 0x02) > 0,
-            extra: (byte & 0x04) > 0,
-            name: (byte & 0x08) > 0,
-            comment: (byte & 0x10) > 0,
-        }
+    #[allow(unused)]
+    fn is_text(&self) -> bool {
+        (self.0 & 0x01) > 0
+    }
+
+    fn has_crc(&self) -> bool {
+        (self.0 & 0x02) > 0
+    }
+
+    fn has_extra(&self) -> bool {
+        (self.0 & 0x04) > 0
+    }
+
+    fn has_name(&self) -> bool {
+        (self.0 & 0x08) > 0
+    }
+
+    fn has_comment(&self) -> bool {
+        (self.0 & 0x10) > 0
     }
 }
 
@@ -82,7 +86,7 @@ where
         );
     }
 
-    let flags = GzipFlags::new(reader.next_byte()?);
+    let flags = GzipFlags(reader.next_byte()?);
 
     let mtime_bytes = [
         reader.next_byte()?,
@@ -94,7 +98,7 @@ where
     let _extra_flag = reader.next_byte()?;
     let _os = reader.next_byte()?;
 
-    if flags.extra {
+    if flags.has_extra() {
         let length_bytes = [reader.next_byte()?, reader.next_byte()?];
         let length = u16::from_le_bytes(length_bytes).into();
         // TODO: handle extra fields properly
@@ -109,7 +113,7 @@ where
         }
     }
 
-    if flags.name {
+    if flags.has_name() {
         let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
@@ -125,7 +129,7 @@ where
         // eprintln!("original file name = {}", _name);
     }
 
-    if flags.comment {
+    if flags.has_comment() {
         let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
@@ -142,7 +146,7 @@ where
     }
 
     // TODO: check crc16
-    let _header_crc16 = if flags.crc {
+    let _header_crc16 = if flags.has_crc() {
         let bytes = [reader.next_byte()?, reader.next_byte()?];
         let crc = u16::from_le_bytes(bytes);
         Some(crc)
