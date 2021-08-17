@@ -1,12 +1,12 @@
+mod huffman;
+mod raw;
+
 use crate::reader::Reader;
 use crate::writer::Writer;
 use anyhow::{bail, Context, Result};
 use encoding_rs::mem::decode_latin1;
 use std::convert::TryInto;
 use std::io::{Read, Write};
-
-mod huffman;
-mod raw;
 
 // returns (bytes decompressed, whether this is the final block)
 pub fn decompress_block<R, W>(
