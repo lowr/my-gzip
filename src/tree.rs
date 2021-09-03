@@ -93,6 +93,15 @@ impl Node {
     pub fn is_leaf(&self) -> bool {
         self.value.is_some()
     }
+
+    // for profiling
+    pub(crate) fn size(&self) -> usize {
+        if self.is_leaf() {
+            return 1;
+        }
+
+        self.zero.as_ref().map_or(0, |c| c.size()) + self.one.as_ref().map_or(0, |c| c.size()) + 1
+    }
 }
 
 #[derive(Debug)]
@@ -154,6 +163,11 @@ impl BinaryTrie {
     pub fn cursor(&self) -> Cursor {
         // It's guaranteed that Tree won't get modified while Cursor lives.
         Cursor { node: &self.root }
+    }
+
+    // for profiling
+    pub(crate) fn size(&self) -> usize {
+        self.root.size()
     }
 }
 
