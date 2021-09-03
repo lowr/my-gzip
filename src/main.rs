@@ -5,12 +5,16 @@ use std::path::PathBuf;
 #[derive(Clap)]
 struct Opts {
     #[clap(parse(from_os_str))]
+    /// Path for source file.
     src: PathBuf,
     #[clap(parse(from_os_str), required_unless_present("no-emit"))]
+    /// Path for destination file. Required unless `--no-emit` is specified.
     dest: Option<PathBuf>,
     #[clap(long)]
+    /// Prints header to stderr.
     show_header: bool,
     #[clap(long)]
+    /// Do not emit decompressed content. <dest> would be ignored if specified.
     no_emit: bool,
 }
 
