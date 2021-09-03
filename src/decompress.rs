@@ -242,11 +242,11 @@ header CRC        : {}",
     ];
     let data_length = u32::from_le_bytes(data_length_bytes);
 
-    if total_bytes & ((1 << 32) - 1) != data_length.try_into()? {
+    if total_bytes & 0xffffffff != data_length.try_into()? {
         bail!(
-            "input size differs from actual size; input size = {:#x}, actual size (modulo 2^32) = {:#x}",
+            "input size differs from actual size; input size = {:#010x}, actual size (modulo 2^32) = {:#010x}",
             data_length,
-            total_bytes & ((1 << 32) - 1),
+            total_bytes & 0xffffffff,
         );
     }
 
