@@ -3,6 +3,7 @@ mod raw;
 
 use crate::reader::Reader;
 use crate::writer::Writer;
+use crate::DecompressOptions;
 use anyhow::{bail, Context, Result};
 use encoding_rs::mem::decode_latin1;
 use std::convert::TryInto;
@@ -53,7 +54,7 @@ impl GzipFlags {
     }
 }
 
-pub fn decompress<R, W>(reader: &mut R, writer: &mut W) -> Result<()>
+pub fn decompress<R, W>(reader: &mut R, writer: &mut W, opts: &DecompressOptions) -> Result<()>
 where
     R: Read,
     W: Write,
@@ -94,9 +95,9 @@ where
         reader.next_byte()?,
         reader.next_byte()?,
     ];
-    let _mtime = u32::from_le_bytes(mtime_bytes);
-    let _extra_flag = reader.next_byte()?;
-    let _os = reader.next_byte()?;
+    let mtime = u32::from_le_bytes(mtime_bytes);
+    let extra_flag = reader.next_byte()?;
+    let os = reader.next_byte()?;
 
     if flags.has_extra() {
         let length_bytes = [reader.next_byte()?, reader.next_byte()?];
@@ -113,7 +114,7 @@ where
         }
     }
 
-    if flags.has_name() {
+    let original_name = if flags.has_name() {
         let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
@@ -124,12 +125,13 @@ where
             }
         }
 
-        // TODO: handle file name properly
-        let _name = decode_latin1(&buf[..]);
-        // eprintln!("original file name = {}", _name);
-    }
+        let name = decode_latin1(&buf[..]);
+        Some(name.into_owned())
+    } else {
+        None
+    };
 
-    if flags.has_comment() {
+    let comment = if flags.has_comment() {
         let mut buf = vec![];
         loop {
             let byte = reader.next_byte()?;
@@ -140,19 +142,75 @@ where
             }
         }
 
-        // TODO: handle and output comment
-        let _comment = decode_latin1(&buf[..]);
-        // eprintln!("comment = {}", _comment);
-    }
+        let comment = decode_latin1(&buf[..]);
+        Some(comment.into_owned())
+    } else {
+        None
+    };
 
     // TODO: check crc16
-    let _header_crc16 = if flags.has_crc() {
+    let header_crc16 = if flags.has_crc() {
         let bytes = [reader.next_byte()?, reader.next_byte()?];
         let crc = u16::from_le_bytes(bytes);
         Some(crc)
     } else {
         None
     };
+
+    if opts.show_header {
+        let os = match os {
+            0 => "FAT filesystem",
+            1 => "Amiga",
+            2 => "VMS",
+            3 => "Unix",
+            4 => "VM/CMS",
+            5 => "Atari TOS",
+            6 => "HPFS filesystem",
+            7 => "Macintosh",
+            8 => "Z-System",
+            9 => "CP/M",
+            10 => "TOPS-20",
+            11 => "NTFS filesystem",
+            12 => "QDOS",
+            13 => "Acorn RISCOS",
+            255 => "unknown",
+            _ => "unknown (undefined value)",
+        };
+
+        eprintln!(
+            r"magic number      : {:#x} {:#x}
+compression method: {:#04x}
+flags             : {:#04x}
+         FTEXT    : {}
+         FHCRC    : {}
+         FEXTRA   : {}
+         FNAME    : {}
+         FCOMMENT : {}
+modification time : {}
+extra flags       : {:#04x}
+os                : {}
+original file name: {}
+comment           : {}
+header CRC        : {}",
+            ids[0],
+            ids[1],
+            cm,
+            flags.0,
+            flags.is_text(),
+            flags.has_crc(),
+            flags.has_extra(),
+            flags.has_name(),
+            flags.has_comment(),
+            mtime,
+            extra_flag,
+            os,
+            original_name.unwrap_or_else(|| "(not set)".into()),
+            comment.unwrap_or_else(|| "(not set)".into()),
+            header_crc16
+                .map(|n| format!("{:#06x}", n))
+                .unwrap_or_else(|| "(not set)".into()),
+        );
+    }
 
     // actual decompression
     let mut total_bytes = 0;

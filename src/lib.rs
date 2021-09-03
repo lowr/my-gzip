@@ -6,14 +6,26 @@ mod writer;
 
 use anyhow::Result;
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
+use std::io::{sink, BufReader, BufWriter};
 use std::path::Path;
 
-pub fn decompress_file(src: &Path, dest: &Path) -> Result<()> {
-    let mut reader = BufReader::new(File::open(src)?);
-    let mut writer = BufWriter::new(File::create(dest)?);
+#[derive(Debug)]
+pub struct DecompressOptions {
+    pub show_header: bool,
+    pub no_emit: bool,
+}
 
-    decompress::decompress(&mut reader, &mut writer)?;
+/// decompresses gzip file at `src` into `dest`
+pub fn decompress_file(src: &Path, dest: &Path, opts: DecompressOptions) -> Result<()> {
+    let mut reader = BufReader::new(File::open(src)?);
+
+    if opts.no_emit {
+        let mut writer = sink();
+        decompress::decompress(&mut reader, &mut writer, &opts)?;
+    } else {
+        let mut writer = BufWriter::new(File::create(dest)?);
+        decompress::decompress(&mut reader, &mut writer, &opts)?;
+    }
 
     Ok(())
 }
