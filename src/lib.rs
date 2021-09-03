@@ -16,14 +16,16 @@ pub struct DecompressOptions {
 }
 
 /// decompresses gzip file at `src` into `dest`
-pub fn decompress_file(src: &Path, dest: &Path, opts: DecompressOptions) -> Result<()> {
+pub fn decompress_file(src: &Path, dest: Option<&Path>, opts: DecompressOptions) -> Result<()> {
     let mut reader = BufReader::new(File::open(src)?);
 
     if opts.no_emit {
         let mut writer = sink();
         decompress::decompress(&mut reader, &mut writer, &opts)?;
     } else {
-        let mut writer = BufWriter::new(File::create(dest)?);
+        // `dest` is guaranteed to be Some by clap
+        debug_assert!(dest.is_some());
+        let mut writer = BufWriter::new(File::create(dest.unwrap())?);
         decompress::decompress(&mut reader, &mut writer, &opts)?;
     }
 
