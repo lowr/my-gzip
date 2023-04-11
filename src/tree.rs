@@ -8,10 +8,6 @@ fn get_bit(n: u64, i: usize) -> bool {
 struct NodeChild(Option<Box<Node>>);
 
 impl NodeChild {
-    pub fn unbox(&self) -> Option<&Node> {
-        self.0.as_ref().map(|boxed| boxed.as_ref())
-    }
-
     pub fn exists(&self) -> bool {
         self.0.is_some()
     }
@@ -55,22 +51,19 @@ impl Node {
     pub fn follow(&self, bit: bool) -> Result<&Node> {
         let node = if bit { &self.one } else { &self.zero };
 
-        if node.is_none() {
+        node.as_deref().with_context(|| {
             if self.is_leaf() {
-                bail!(
+                format!(
                     "Attempted to follow from leaf with value {}",
                     self.value.unwrap()
-                );
+                )
             } else {
-                bail!(
+                format!(
                     "Attempted to follow from non-leaf node without child {}",
                     if bit { "one" } else { "zero" }
-                );
+                )
             }
-        }
-
-        let ret = node.as_ref().unwrap().as_ref();
-        Ok(ret)
+        })
     }
 
     pub fn add(&mut self, bit: bool, node: Node) -> Result<&Node> {
@@ -79,8 +72,7 @@ impl Node {
         if child.exists() {
             bail!("child already exists")
         } else {
-            *child = node.into();
-            child.unbox().context("infallible")
+            Ok(child.insert(node.into()))
         }
     }
 
