@@ -8,7 +8,7 @@ fn get_bit(n: u64, i: usize) -> bool {
 struct NodeChild(Option<Box<Node>>);
 
 impl NodeChild {
-    pub fn exists(&self) -> bool {
+    fn exists(&self) -> bool {
         self.0.is_some()
     }
 }
@@ -40,7 +40,7 @@ struct Node {
 }
 
 impl Node {
-    pub fn new(value: Option<u64>) -> Self {
+    fn new(value: Option<u64>) -> Self {
         Self {
             value,
             zero: NodeChild(None),
@@ -48,7 +48,7 @@ impl Node {
         }
     }
 
-    pub fn follow(&self, bit: bool) -> Result<&Node> {
+    fn follow(&self, bit: bool) -> Result<&Node> {
         let node = if bit { &self.one } else { &self.zero };
 
         node.as_deref().with_context(|| {
@@ -66,7 +66,7 @@ impl Node {
         })
     }
 
-    pub fn add(&mut self, bit: bool, node: Node) -> Result<&Node> {
+    fn add(&mut self, bit: bool, node: Node) -> Result<&Node> {
         let child = if bit { &mut self.one } else { &mut self.zero };
 
         if child.exists() {
@@ -76,19 +76,19 @@ impl Node {
         }
     }
 
-    pub fn follow_or_add(&mut self, bit: bool, value: Option<u64>) -> &mut Node {
+    fn follow_or_add(&mut self, bit: bool, value: Option<u64>) -> &mut Node {
         let child = if bit { &mut self.one } else { &mut self.zero };
 
         child.get_or_insert_with(|| Node::new(value).into())
     }
 
-    pub fn is_leaf(&self) -> bool {
+    fn is_leaf(&self) -> bool {
         self.value.is_some()
     }
 
     // for profiling
     #[allow(unused)]
-    pub(crate) fn size(&self) -> usize {
+    fn size(&self) -> usize {
         if self.is_leaf() {
             return 1;
         }
@@ -153,7 +153,7 @@ impl BinaryTrie {
         Ok(())
     }
 
-    pub fn cursor(&self) -> Cursor {
+    pub fn cursor(&self) -> Cursor<'_> {
         // It's guaranteed that Tree won't get modified while Cursor lives.
         Cursor { node: &self.root }
     }
@@ -177,7 +177,7 @@ pub enum NodeType {
     LeafNode(u64),
 }
 
-impl<'a> Cursor<'a> {
+impl Cursor<'_> {
     pub fn follow(&mut self, bit: bool) -> Result<NodeType> {
         let node = self.node.follow(bit)?;
         self.node = node;
