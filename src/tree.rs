@@ -95,6 +95,7 @@ impl Node {
     }
 
     // for profiling
+    #[allow(unused)]
     pub(crate) fn size(&self) -> usize {
         if self.is_leaf() {
             return 1;
@@ -166,6 +167,7 @@ impl BinaryTrie {
     }
 
     // for profiling
+    #[allow(unused)]
     pub(crate) fn size(&self) -> usize {
         self.root.size()
     }

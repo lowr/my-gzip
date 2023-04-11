@@ -106,7 +106,7 @@ where
                 // literal; represents the value itself
                 let b = c.try_into().unwrap();
                 writer.write_all(&[b])?;
-                prev.insert(b);
+                prev = Some(b);
                 remain -= 1;
             }
             16 => {
@@ -143,7 +143,7 @@ where
                     writer.write_all(&[0])?;
                 }
 
-                prev.insert(0);
+                prev = Some(0);
                 remain -= repeat_length;
             }
             // shouldn't be a problem when `tree` is constructed by `build()`
